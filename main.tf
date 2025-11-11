@@ -81,11 +81,17 @@ resource "aws_cloudfront_distribution" "this" {
     target_origin_id = aws_s3_bucket.this.bucket_regional_domain_name
     viewer_protocol_policy = "redirect-to-https"
     cache_policy_id = data.aws_cloudfront_cache_policy.managed_caching_optimized.id
+    origin_request_policy_id = var.cloudfront_origin_request_policy_id
     compress = true
 
     function_association {
-      event_type = "viewer-request"
+      event_type   = "viewer-request"
       function_arn = var.cloudfront_viewer_request_handler_arn
+    }
+    
+    function_association {
+      event_type   = "viewer-response"
+      function_arn = var.cloudfront_viewer_response_handler_arn
     }
   }
 

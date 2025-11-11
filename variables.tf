@@ -8,6 +8,16 @@ variable "cloudfront_viewer_request_handler_arn" {
   type        = string
 }
 
+variable "cloudfront_viewer_response_handler_arn" {
+  description = "The ARN of the CloudFront function to handle viewer responses"
+  type        = string
+}
+
+variable "cloudfront_origin_request_policy_id" {
+  description = "The ID of the CloudFront origin request policy"
+  type        = string
+}
+
 variable "oidc_provider_arn" {
   description = "ARN of the existing GitHub OIDC provider"
   type        = string
