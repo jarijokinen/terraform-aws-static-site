@@ -88,7 +88,7 @@ resource "aws_cloudfront_distribution" "this" {
     cached_methods   = ["GET", "HEAD"]
     target_origin_id = aws_s3_bucket.this.bucket_regional_domain_name
     viewer_protocol_policy = "redirect-to-https"
-    cache_policy_id = aws_cloudfront_cache_policy.this.id
+    cache_policy_id = data.aws_cloudfront_cache_policy.caching_optimized.id
     compress = true
 
     function_association {
@@ -123,28 +123,8 @@ resource "aws_cloudfront_distribution" "this" {
   ]
 }
 
-resource "aws_cloudfront_cache_policy" "this" {
-  name        = "CachingOptimized"
-  default_ttl = 86400
-  max_ttl     = 31536000
-  min_ttl     = 1
-
-  parameters_in_cache_key_and_forwarded_to_origin {
-    enable_accept_encoding_gzip = true
-    enable_accept_encoding_brotli = true
-
-    cookies_config {
-      cookie_behavior = "none"
-    }
-
-    headers_config {
-      header_behavior = "none"
-    }
-
-    query_strings_config {
-      query_string_behavior = "none"
-    }
-  }
+data "aws_cloudfront_cache_policy" "caching_optimized" {
+  name = "Managed-CachingOptimized"
 }
 
 resource "aws_cloudfront_origin_access_control" "this" {
