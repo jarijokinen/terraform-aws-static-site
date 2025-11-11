@@ -8,7 +8,17 @@ variable "cloudfront_viewer_request_handler_arn" {
   type        = string
 }
 
-variable "github_repository" {
-  description = "The GitHub repository that should have an access to the S3 bucket and CloudFront distribution"
+variable "oidc_provider_arn" {
+  description = "ARN of the existing GitHub OIDC provider"
   type        = string
+}
+
+variable "oidc_role_name" {
+  type        = string
+  description = "OIDC role name"
+}
+
+variable "oidc_subject" {
+  type        = string
+  description = "OIDC subject"
 }

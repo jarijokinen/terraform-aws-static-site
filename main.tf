@@ -1,11 +1,3 @@
-module "oidc" {
-  source = "./modules/oidc"
-  oidc_issuer = "token.actions.githubusercontent.com"
-  oidc_audience = "sts.amazonaws.com"
-  oidc_subject = "repo:${var.github_repository}:ref:refs/heads/main"
-  oidc_role_name = "gh-${replace(var.domain_name, ".", "-")}"
-}
-
 data "aws_route53_zone" "this" {
   name = var.domain_name
 
@@ -88,7 +80,7 @@ resource "aws_cloudfront_distribution" "this" {
     cached_methods   = ["GET", "HEAD"]
     target_origin_id = aws_s3_bucket.this.bucket_regional_domain_name
     viewer_protocol_policy = "redirect-to-https"
-    cache_policy_id = data.aws_cloudfront_cache_policy.caching_optimized.id
+    cache_policy_id = data.aws_cloudfront_cache_policy.managed_caching_optimized.id
     compress = true
 
     function_association {
@@ -123,7 +115,7 @@ resource "aws_cloudfront_distribution" "this" {
   ]
 }
 
-data "aws_cloudfront_cache_policy" "caching_optimized" {
+data "aws_cloudfront_cache_policy" "managed_caching_optimized" {
   name = "Managed-CachingOptimized"
 }
 
