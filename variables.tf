@@ -9,8 +9,9 @@ variable "cloudfront_viewer_request_handler_arn" {
 }
 
 variable "cloudfront_viewer_response_handler_arn" {
-  description = "The ARN of the CloudFront function to handle viewer responses"
+  description = "The ARN of the CloudFront function to handle viewer responses (optional)"
   type        = string
+  default     = null
 }
 
 variable "cloudfront_origin_request_policy_id" {

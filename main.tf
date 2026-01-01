@@ -16,7 +16,7 @@ resource "aws_acm_certificate" "this" {
 
 resource "aws_route53_record" "cert_validation" {
   for_each = {
-    for dvo in aws_acm_certificate.this.domain_validation_options: 
+    for dvo in aws_acm_certificate.this.domain_validation_options :
     dvo.domain_name => {
       name   = dvo.resource_record_name
       type   = dvo.resource_record_type
@@ -29,12 +29,12 @@ resource "aws_route53_record" "cert_validation" {
   zone_id = data.aws_route53_zone.this.zone_id
   records = [each.value.record]
   ttl     = 60
-  
+
   provider = aws.route53
 }
 
 resource "aws_acm_certificate_validation" "cert_validation" {
-  certificate_arn         = aws_acm_certificate.this.arn
+  certificate_arn = aws_acm_certificate.this.arn
   validation_record_fqdns = [
     for record in aws_route53_record.cert_validation : record.fqdn
   ]
@@ -48,12 +48,12 @@ resource "aws_acm_certificate_validation" "cert_validation" {
 data "aws_caller_identity" "current" {}
 
 resource "aws_s3_bucket" "this" {
-  bucket = format("%s-%s", replace(var.domain_name, ".", "-"), data.aws_caller_identity.current.account_id) 
+  bucket        = format("%s-%s", replace(var.domain_name, ".", "-"), data.aws_caller_identity.current.account_id)
   force_destroy = true
 }
 
 resource "aws_s3_bucket_public_access_block" "this" {
-  bucket = aws_s3_bucket.this.id
+  bucket                  = aws_s3_bucket.this.id
   block_public_acls       = true
   block_public_policy     = true
   ignore_public_acls      = true
@@ -70,49 +70,52 @@ resource "aws_cloudfront_distribution" "this" {
   aliases = [var.domain_name, "www.${var.domain_name}"]
 
   origin {
-    domain_name = aws_s3_bucket.this.bucket_regional_domain_name
-    origin_id   = aws_s3_bucket.this.bucket_regional_domain_name
+    domain_name              = aws_s3_bucket.this.bucket_regional_domain_name
+    origin_id                = aws_s3_bucket.this.bucket_regional_domain_name
     origin_access_control_id = aws_cloudfront_origin_access_control.this.id
   }
 
   default_cache_behavior {
-    allowed_methods  = ["GET", "HEAD", "OPTIONS"]
-    cached_methods   = ["GET", "HEAD"]
-    target_origin_id = aws_s3_bucket.this.bucket_regional_domain_name
-    viewer_protocol_policy = "redirect-to-https"
-    cache_policy_id = data.aws_cloudfront_cache_policy.managed_caching_optimized.id
+    allowed_methods          = ["GET", "HEAD", "OPTIONS"]
+    cached_methods           = ["GET", "HEAD"]
+    target_origin_id         = aws_s3_bucket.this.bucket_regional_domain_name
+    viewer_protocol_policy   = "redirect-to-https"
+    cache_policy_id          = data.aws_cloudfront_cache_policy.managed_caching_optimized.id
     origin_request_policy_id = var.cloudfront_origin_request_policy_id
-    compress = true
+    compress                 = true
 
     function_association {
       event_type   = "viewer-request"
       function_arn = var.cloudfront_viewer_request_handler_arn
     }
-    
-    function_association {
-      event_type   = "viewer-response"
-      function_arn = var.cloudfront_viewer_response_handler_arn
+
+    dynamic "function_association" {
+      for_each = var.cloudfront_viewer_response_handler_arn == null ? [] : [var.cloudfront_viewer_response_handler_arn]
+      content {
+        event_type   = "viewer-response"
+        function_arn = function_association.value
+      }
     }
   }
 
   viewer_certificate {
-    acm_certificate_arn = aws_acm_certificate.this.arn
+    acm_certificate_arn      = aws_acm_certificate.this.arn
     minimum_protocol_version = "TLSv1.2_2021"
-    ssl_support_method  = "sni-only"
+    ssl_support_method       = "sni-only"
   }
 
   restrictions {
     geo_restriction {
       restriction_type = "none"
-      locations = []
+      locations        = []
     }
   }
 
   custom_error_response {
     error_caching_min_ttl = 3600
-    error_code = 404
-    response_code = 404
-    response_page_path = "/404.html"
+    error_code            = 404
+    response_code         = 404
+    response_page_path    = "/404.html"
   }
 
   depends_on = [
@@ -126,10 +129,10 @@ data "aws_cloudfront_cache_policy" "managed_caching_optimized" {
 }
 
 resource "aws_cloudfront_origin_access_control" "this" {
-  name = aws_s3_bucket.this.bucket
+  name                              = aws_s3_bucket.this.bucket
   origin_access_control_origin_type = "s3"
-  signing_behavior = "always"
-  signing_protocol = "sigv4"
+  signing_behavior                  = "always"
+  signing_protocol                  = "sigv4"
 }
 
 resource "aws_route53_record" "a" {
@@ -142,7 +145,7 @@ resource "aws_route53_record" "a" {
     zone_id                = aws_cloudfront_distribution.this.hosted_zone_id
     evaluate_target_health = true
   }
-  
+
   provider = aws.route53
 }
 
@@ -156,7 +159,7 @@ resource "aws_route53_record" "www_a" {
     zone_id                = aws_cloudfront_distribution.this.hosted_zone_id
     evaluate_target_health = true
   }
-  
+
   provider = aws.route53
 }
 
@@ -170,7 +173,7 @@ resource "aws_route53_record" "aaaa" {
     zone_id                = aws_cloudfront_distribution.this.hosted_zone_id
     evaluate_target_health = true
   }
-  
+
   provider = aws.route53
 }
 
@@ -184,7 +187,7 @@ resource "aws_route53_record" "www_aaaa" {
     zone_id                = aws_cloudfront_distribution.this.hosted_zone_id
     evaluate_target_health = true
   }
-  
+
   provider = aws.route53
 }
 
@@ -194,12 +197,12 @@ data "aws_iam_policy_document" "cloudfront_s3_policy" {
       "s3:GetObject",
       "s3:ListBucket"
     ]
-    
+
     resources = [
       aws_s3_bucket.this.arn,
       "${aws_s3_bucket.this.arn}/*"
     ]
-    
+
     principals {
       type        = "Service"
       identifiers = ["cloudfront.amazonaws.com"]
