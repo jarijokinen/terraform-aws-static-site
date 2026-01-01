@@ -46,6 +46,7 @@ resource "aws_acm_certificate_validation" "cert_validation" {
 }
 
 data "aws_caller_identity" "current" {}
+data "aws_region" "current" {}
 
 resource "aws_s3_bucket" "this" {
   bucket        = format("%s-%s", replace(var.domain_name, ".", "-"), data.aws_caller_identity.current.account_id)
